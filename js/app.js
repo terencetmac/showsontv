@@ -40,29 +40,45 @@ var FollowShows = (function () {
 
 	function addItem (showId) {
 		// retrieve current following shows
-		var followingShows = JSON.parse(localStorage.getItem('following_shows'));
-
-		if (!followingShows) {
-			followingShows = [];
-
-		}
+		var followingShows = this.list();
 
 		var exists = followingShows.some(function (val) {
 			return val == showId;
 		});
 
 		if (exists) {
-			throw new Error('You are already following this show.');
+			return;
 		}
 
 		followingShows.push(showId);
-		
+
+		return this.store(followingShows);
+	}
+
+	function removeItem(showId) {
+		var followingShows = this.list();
+
+		var filteredList = followingShows.filter(function (val) {
+			return val != showId;
+		});
+
+		return this.store(filteredList);
+	}
+
+	function store(data) {
+		if (!window.localStorage) {
+			throw new Error('Your browser does not support localStore.');
+		};
+
 		try {
-			localStorage.setItem('following_shows', JSON.stringify(followingShows));
+			localStorage.setItem('following_shows', JSON.stringify(data));
 			return true;
 		} catch (err) {
 			console.log(err.message);
 		}
+
+		return false;
+
 	}
 
 	function list () {
@@ -74,14 +90,22 @@ var FollowShows = (function () {
 	}
 
 	function isFollowing(showId) {
-		var list = list();
-		console.log(list);
+		var list = this.list();
+		if (list) {
+			return list.some(function (val) {
+				return val == showId;
+			});
+		}
+
+		return false;
 	}
 
 	return {
 		addItem: addItem,
+		removeItem: removeItem,
 		list: list,
-		isFollowing: isFollowing
+		isFollowing: isFollowing,
+		store: store
 	}
 })();
 
@@ -127,11 +151,24 @@ var FollowShows = (function () {
 
 	function followShowClicked() {
 		var showId = this.parentElement.dataset.showId;
-		FollowShows.isFollowing(showId);
-		// if following
-		// 		unfollow
-		// else
-		// 		follow
+		var isFollowing = FollowShows.isFollowing(showId);
+
+		if (isFollowing) {
+			unfollowShow(showId);
+		} else {
+			followShow(showId);
+		}
+	}
+
+	function unfollowShow(showId) {
+		if (FollowShows.removeItem(showId)) {
+			var button = document.querySelector('[data-show-id="' + showId + '"] .followShow-js') 
+			button.classList.toggle('is-following');
+			button.textContent = 'Follow';
+		}
+	}
+
+	function followShow(showId) {
 		if (FollowShows.addItem(showId)) {
 			var button = document.querySelector('[data-show-id="' + showId + '"] .followShow-js') 
 			button.classList.toggle('is-following');
