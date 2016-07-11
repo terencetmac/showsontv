@@ -9,16 +9,74 @@
 	<meta name="description" content="Shows currently on TV">
 	<meta name="author" content="Terence Tham">
 
-	<link rel="stylesheet" src="/css/styles.css">
+	<link rel="stylesheet" href="css/foundation.min.css">
+	<link rel="stylesheet" href="vendor/pikaday.css">
 
 	<!--[if lt IE 9]>
-    	<script src="http://html5shiv.googlecode.com/svn/trunk/html5.js"></script>
-  	<![endif]-->
+		<script src="http://html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+	<![endif]-->
+	<style>
+		.media-object img {
+			height: 120px;
+		}
+
+		.is-following.is-following {
+			background-color: #ffae00;
+		}
+	</style>
 </head>
 
 <body>
 
-	<script src="/js/app.js"></script>
+	<div class="top-bar">
+		<div class="top-bar-left">
+			<ul class="dropdown menu" data-dropdown-menu>
+				<li class="menu-text">Shows on TV</li>
+			</ul>
+		</div>
+
+	  <div class="top-bar-right">
+		<ul class="menu">
+		  <li><input type="search" placeholder="Search"></li>
+		  <li><button type="button" class="button">Search</button></li>
+		</ul>
+	  </div>
+	</div>
+
+	<div class="row">
+		<div class="columns small-12">
+			<ul class="menu">
+				<li class="active"><a href="">TV Listings</a></li>
+				<li><a href="">Following</a></li>
+			</ul>
+		</div>
+	</div>
+
+	<div class="row">
+		<div class="columns small-12" style="text-align: center">
+			<hr>
+			<a id="prev-date-js" class="medium button"><</a>
+
+			<!-- <span id="today-js"></span> -->
+			<input id="today-js" type="text" style="display: inline-block; width: 80%">
+
+			<a id="next-date-js" class="medium button">></a>
+			<hr>
+		</div>
+	</div>
+
+	<div class="row">
+		<div class="columns small-12">
+			<div id="xyz">
+				
+			</div>
+		
+			<pre id="json"></pre>
+		</div>
+	</div>
+
+	<script src="vendor/pikaday.js"></script>
+	<script src="js/app.js"></script>
 </body>
 
 </html>
