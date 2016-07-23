@@ -1,6 +1,5 @@
 // Todo
-// add following: true toeach show
-// based on 
+// Router
 
 var DatePicker = (function () {
 	var todayDate = new Date();
