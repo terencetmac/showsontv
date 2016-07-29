@@ -351,6 +351,17 @@ var TvListing = (function () {
 	}
 })();
 
+var SearchShow = (function () {
+	var render = function () {
+		var el = document.getElementById('page-view');
+		return el.innerHTML = '';
+	}
+
+	return {
+		render: render
+	}
+})();
+
 (function () {
 	var httpRequest;
 	var listingDate = new Date();
@@ -453,7 +464,7 @@ var TvListing = (function () {
 	}
 
 	function formatPrimeTimeShows() {
-		var primeTimeSlots = ['20:00', '20:30'];
+		var primeTimeSlots = ['20:00', '20:30', '21:00'];
 		if (httpRequest.readyState === XMLHttpRequest.DONE) {
 			if (httpRequest.status === 200) {
 				var listing = JSON.parse(httpRequest.responseText);
@@ -545,5 +556,9 @@ Router.add('/following', function () {
 
 Router.add('/listing', function () {
 	TvListing.render();
+});
+
+Router.add('/search', function () {
+	SearchShows.render();
 });
 
