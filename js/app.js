@@ -1,4 +1,3 @@
-//
 var DatePicker = (function () {
 	var todayDate = new Date();
 
@@ -29,11 +28,78 @@ var DatePicker = (function () {
 		tomorrow: tomorrow,
 		yesterday: yesterday
 	}
+})();
 
+var Util = (function () {
+
+	function compareByDates (a, b) {
+		var dateA = new Date(a.airstamp);
+		var dateB = new Date(b.airstamp);
+		if (dateA > dateB) {
+			return -1;
+		} 
+
+		if (dateA < dateB) {
+			return 1;
+		} 
+
+		return 0;
+	}
+
+	return {
+		compareByDates: compareByDates
+	}
 })();
 
 var FollowShows = (function () {
 	var following = [];
+
+	// events
+	function attachEventListeners () {
+		document.getElementById('following-shows').addEventListener('click', clickCallback, false);
+	}
+
+	function clickCallback () {
+		if ( event.target !== event.currentTarget && event.target.classList.contains('showEpisodes-js') ) {
+			var showId = event.target.parentElement.dataset.showId;
+			showList(showId);
+		}
+	}
+
+	function showList(showId) {
+		var list = document.querySelector('[data-show-id="' + showId + '"] ul');
+		var showListBtn = document.querySelector('[data-show-id="' + showId + '"] .showEpisodes-js');
+		// if there are no .hidden elements in list, that means the full list is being shown
+		var hiddenChildren = list.querySelectorAll('.hidden');
+		var fullListShown = hiddenChildren.length <= App.config.following.showLatestEpisodes ? true : false;
+
+		// short list length hardcoded to 2
+		if (fullListShown === true) {
+			var listChildren = list.querySelectorAll('li');
+			for (var i = App.config.following.showLatestEpisodes; i < listChildren.length; i++) {
+				listChildren[i].classList.toggle('hidden');
+			}
+			return showListBtn.textContent = 'Show all Episodes \u25BC';
+		}
+
+		for (var i = 0; i < hiddenChildren.length; i++) {
+			hiddenChildren[i].classList.toggle('hidden');
+		}
+		return showListBtn.textContent = 'Hide Episodes \u25B2';
+
+	}
+	// document.getElementById('page-view').addEventListener('click', markWatched, false);
+
+	// function markWatched (event) {
+	// 	var isWatchBtn = event.target.classList.contains('watchedEpisode-js');
+	// 	if ( event.target !== event.currentTarget && isWatchBtn ) {
+	// 		console.log('true: ', event.target.className);
+	// 		var showId = event.target.parentElement.dataset.showId;
+	// 		var episodeId = event.target.parentElement.dataset.episodeId;
+	// 		console.log(episodeId);
+	// 		return FollowShows.toggleWatched(showId, episodeId);
+	// 	}
+	// }
 
 	function addItem (showId) {
 		// retrieve current following shows
@@ -228,7 +294,7 @@ var FollowShows = (function () {
 		if (removeWatchedEpisode(showId, episodeId)) {
 			var button = document.querySelector('[data-episode-id="' + episodeId + '"] .watchedEpisode-js') 
 			button.classList.toggle('is-watched');
-			button.textContent = 'Mark as watched';
+			button.textContent = 'Mark watched';
 		}
 	}
 
@@ -238,67 +304,6 @@ var FollowShows = (function () {
 			button.classList.toggle('is-watched');
 			button.textContent = 'Watched';
 		}
-	}
-
-	function render () {
-		console.log('following render');
-		var el = document.getElementById('page-view');
-		var list = this.list();
-		populateShowInfo(list).then(function (results) {
-			console.log(results);
-			var str = '';
-			str += '<div class="row">';
-			str += '<div class="small-12 columns">';
-			results.forEach(function (val) {
-
-				var recentSeasonArray = getRecentSeason(val['_embedded']['episodes']);
-				recentSeasonArray.forEach(function (el) {
-					el['watched'] = checkWatched(el.id);
-				});
-				var showId = val.id;
-				str+= '<div class="media-object">';
-					str+= '<div class="media-object-section">'
-					if (val.image) {
-						str+= '<div class="thumbnail">';
-						str+= '<img src="' + val.image.medium + '">';
-						str+= '</div>';
-					}
-					str+= '</div>';
-					str+= '<div class="media-object-section" style="width: 100%;">';
-						// str+= '<div style="vertical-align: middle" data-show-id="' + val.show.id + '"><strong>' + val.show.name + ' on ' + val.show.network.name + '</strong>';
-						// if (val.isFollowing) {
-						// 	str+= '<a class="tiny button is-following followShow-js">Following</a></div>';
-						// } else {
-						// 	str+= '<a class="tiny button followShow-js">Follow</a></div>';
-						// }
-						// str+= '<p> S' + val.season + 'E' + val.number + ' ' + val.name + ' at ' + val.airtime;
-						str+= '<p>' + val.name + '</p>';
-						str+= '</p>';
-						str+= '<ul>';
-						recentSeasonArray.forEach(function (val) {
-							str+= '<li data-show-id="' + showId + '" data-episode-id="' + val.id + '">';
-							str+= 'S' + val.season + 'E' + val.number + ' ' + val.name;
-							str+= '<a class="float-right watchedEpisode-js">';
-							if (val.watched) {
-								str+= 'Watched'
-							} else {
-								str+= 'Mark as Watched';
-							}
-							str+= '</a>';
-							str+= '</li>';
-						});
-						str+= '</ul>';
-					str+= '</div>';
-				str+= '</div>';
-			}.bind(this));
-			str += '</div></div>'; 
-			return el.innerHTML = str;
-		}.bind(this), function (err) {
-			console.log(err);
-		}).then(function () {
-			addWatchedEventListener();
-		});
-
 	}
 
 	function populateShowInfo(shows) {
@@ -330,39 +335,97 @@ var FollowShows = (function () {
 		});
 	}
 
+	function render () {
+		console.log('following render');
+		var el = document.getElementById('page-view');
+		var list = this.list();
+		populateShowInfo(list).then(function (results) {
+			console.log(results);
+			var str = '<div id="following-shows">';
+			str += '<div class="row">';
+			str += '<div class="small-12 columns">';
+			results.forEach(function (val) {
+
+				var recentSeasonArray = getRecentSeason(val['_embedded']['episodes']);
+				recentSeasonArray.forEach(function (el) {
+					el['watched'] = checkWatched(el.id);
+				});
+
+				recentSeasonArray.sort(Util.compareByDates);
+
+				var showId = val.id;
+				str+= '<div class="media-object">';
+					str+= '<div class="media-object-section">'
+					if (val.image) {
+						str+= '<div class="thumbnail">';
+						str+= '<img src="' + val.image.medium + '">';
+						str+= '</div>';
+					}
+					str+= '</div>';
+					str+= '<div class="media-object-section" style="width: 100%;">';
+						// str+= '<div style="vertical-align: middle" data-show-id="' + val.show.id + '"><strong>' + val.show.name + ' on ' + val.show.network.name + '</strong>';
+						// if (val.isFollowing) {
+						// 	str+= '<a class="tiny button is-following followShow-js">Following</a></div>';
+						// } else {
+						// 	str+= '<a class="tiny button followShow-js">Follow</a></div>';
+						// }
+						// str+= '<p> S' + val.season + 'E' + val.number + ' ' + val.name + ' at ' + val.airtime;
+						str+= '<div style="vertical-align: middle; overflow: hidden;" data-show-id="' + val.id + '">';
+						str+= '<strong>' + val.name + ' on ' + val.network.name + '</strong>';
+						str+= '<ul style="list-style: none;margin-bottom: 0;">';
+						str+= '<div style="text-align: center;"><em><small>- Latest Episode - </small></em></div>';
+						recentSeasonArray.forEach(function (val, index) {
+							var isHidden = index >= App.config.following.showLatestEpisodes ? 'hidden' : '';
+							str+= '<li class="' + isHidden + '" ';
+							str += 'style="border:1px solid #ccc;padding: 10px 5px 10px 10px;overflow:hidden;" data-show-id="' + showId + '" data-episode-id="' + val.id + '">';
+							var date = new Date(val.airstamp);
+							// console.log(val.airstamp);
+							// console.log(DatePicker.today().toLocaleDateString());
+							console.log(DatePicker.today().toLocaleDateString(), date.toLocaleDateString());
+							console.log(DatePicker.today().toLocaleDateString() < date.toLocaleDateString());
+							if (+DatePicker.today().toLocaleDateString() < +date.toLocaleDateString()) {
+								str+='upcoming';
+							}
+							var airedOn = date.getMonth() + '/' + date.getDate() + '/' + date.getFullYear();
+							str+= 'S' + val.season + 'E' + val.number + ' ' + val.name + ' aired on ' + airedOn;
+							if (val.watched) {
+								str+= '<a class="float-right watchedEpisode-js is-watched button tiny">Watched';
+							} else {
+								str+= '<a class="float-right watchedEpisode-js button tiny">Mark watched';
+							}
+							str+= '</a>';
+							str+= '</li>';
+						});
+						str+= '</ul>';
+						str+= '<div style="margin-left: 20px;background-color: #ccc; text-align: center; cursor: pointer" class="showEpisodes-js">Show all Episodes \u25BC</div>';
+						str+= '</div>';
+					str+= '</div>';
+				str+= '</div>';
+			}.bind(this));
+			str += '</div></div></div>'; 
+			return el.innerHTML = str;
+		}.bind(this), function (err) {
+			console.log(err);
+		}).then(function () {
+			addWatchedEventListener();
+			attachEventListeners();
+		});
+	}
+
 	return {
 		addItem: addItem,
 		removeItem: removeItem,
 		list: list,
 		isFollowing: isFollowing,
 		store: store,
+		toggleWatched: toggleWatched,
+		checkWatched: checkWatched,
 		render: render
 	}
 })();
 
 var TvListing = (function () {
-	var render = function () {
-		var el = document.getElementById('page-view');
-		return el.innerHTML = ''; 
-	}
 
-	return {
-		render: render
-	}
-})();
-
-var SearchShow = (function () {
-	var render = function () {
-		var el = document.getElementById('page-view');
-		return el.innerHTML = '';
-	}
-
-	return {
-		render: render
-	}
-})();
-
-(function () {
 	var httpRequest;
 	var listingDate = new Date();
 
@@ -388,11 +451,27 @@ var SearchShow = (function () {
 		// updateListingDate(newDate);
 		// getListing(newDate);
 	}
+
 	document.getElementById('next-date-js').onclick = function () {
 		var newDate = DatePicker.tomorrow(listingDate);
 		picker.setDate(newDate);
 		// updateListingDate(newDate);
 		// getListing(newDate);
+	}
+
+	function attachEventListeners() {
+		document.getElementById('tv-listing').addEventListener('click', markWatched, false);
+	}
+
+	function markWatched (event) {
+		var isWatchBtn = event.target.classList.contains('watchedEpisode-js');
+		if ( event.target !== event.currentTarget && isWatchBtn ) {
+			console.log('true: ', event.target.className);
+			var showId = event.target.parentElement.dataset.showId;
+			var episodeId = event.target.parentElement.dataset.episodeId;
+			console.log(episodeId);
+			return FollowShows.toggleWatched(showId, episodeId);
+		}
 	}
 
 	function addFollowShowEventListener() {
@@ -403,6 +482,7 @@ var SearchShow = (function () {
 	}
 
 	function followShowClicked() {
+		console.log('follow show clicked');
 		var showId = this.parentElement.dataset.showId;
 		var isFollowing = FollowShows.isFollowing(showId);
 
@@ -492,10 +572,13 @@ var SearchShow = (function () {
 					} else {
 						val['isFollowing'] = false;
 					}
+					val['isWatched'] = FollowShows.checkWatched(val.id);
 					return val;
-				});
+				});				
+
 				console.log(primeTimeWithFollowing);
-				var str = '';
+				var str = '<div id="tv-listing">';
+
 				primeTimeWithFollowing.forEach(function (val) {
 					str+= '<div class="media-object">';
 						str+= '<div class="media-object-section">'
@@ -506,24 +589,81 @@ var SearchShow = (function () {
 						}
 						str+= '</div>';
 						str+= '<div class="media-object-section" style="width: 100%;">';
-							str+= '<div style="vertical-align: middle" data-show-id="' + val.show.id + '"><strong>' + val.show.name + ' on ' + val.show.network.name + '</strong>';
+							str+= '<div style="vertical-align: middle; overflow: hidden;" data-show-id="' + val.show.id + '">';
+							str+= '<strong>' + val.show.name + ' on ' + val.show.network.name + '</strong>';
 							if (val.isFollowing) {
-								str+= '<a class="tiny button is-following followShow-js">Following</a></div>';
+								str+= '<a class="tiny button is-following float-right followShow-js">Following</a>';
 							} else {
-								str+= '<a class="tiny button followShow-js">Follow</a></div>';
+								str+= '<a class="tiny button float-right followShow-js">Follow</a>';
 							}
-							str+= '<p> S' + val.season + 'E' + val.number + ' ' + val.name + ' at ' + val.airtime;
-							str+= '<a class="small button secondary float-right">Mark as watched</a>';
-							str+= '</p>';
+							str+= '</div>'; // title
+							str+= '<div class="callout" style="overflow: hidden;" data-show-id="' + val.show.id + '" data-episode-id="' + val.id + '"> S' + val.season + 'E' + val.number + ' ' + val.name;
+							str+= '<span class="secondary label float-right">' + val.airtime + '</span>';
+							if (val.isFollowing) {
+								if (val.isWatched) {
+									str+= '<a class="small button float-right is-watched watchedEpisode-js">Watched</a>';
+								} else {
+									str+= '<a class="small button float-right watchedEpisode-js">Mark watched</a>';
+								}
+							}
+							str+= '</div>';
 						str+= '</div>';
 					str+= '</div>';
 				});
 
-				document.getElementById('xyz').innerHTML = str;
+				str+= '</div>';
+
+				document.getElementById('page-view').innerHTML = str;
 				addFollowShowEventListener();
+				attachEventListeners();
+				return str;
 			}
 		}
 	}
+
+	var render = function () {
+		var el = document.getElementById('page-view');
+		var str = formatPrimeTimeShows();
+		return el.innerHTML = str; 
+	}
+
+	return {
+		render: render
+	}
+
+})();
+
+var SearchShows = (function () {
+
+	function showSearchBar () {
+		var str = '';
+		str += '<div>Search</div>'
+		return str;
+	}
+
+	var render = function () {
+		var el = document.getElementById('page-view');
+		var str = '';
+		str+= showSearchBar();
+		return el.innerHTML = str;
+	}
+
+	return {
+		render: render
+	}
+})();
+
+var App = (function () {
+	var config = {
+		following: {
+			showLatestEpisodes: 1
+		}
+	};
+
+	return {
+		config: config
+	}
+	// add event listeners to page-view
 })();
 
 // Router
@@ -537,14 +677,25 @@ var Router = {
 	events: function () {
 		window.addEventListener('hashchange', function () {
 			var newUrl = window.location.hash;
+			this.updateNavBar(newUrl);
+			
 			var thisRoute = this.routes.filter(function (val) {
 				return val.re === newUrl.substr(1);
 			});
-			console.log(thisRoute[0].handler());
+
+			return thisRoute[0].handler();
 		}.bind(this));	
 	},
 	add: function (route, callback) {
 		this.routes.push({re: route, handler: callback});
+	},
+
+	updateNavBar: function (newUrl) {
+		var nav = document.getElementById('mainNav-js');
+		// remove .active
+		nav.querySelector('.active').classList.remove('active');
+		// add .active
+		return nav.querySelector('a[href="' + newUrl + '"]').parentElement.classList.add('active');
 	}
 };
 
@@ -552,13 +703,16 @@ Router.init();
 
 Router.add('/following', function () {
 	FollowShows.render();
+	document.getElementById('date-picker').classList.add('hidden');
 });
 
 Router.add('/listing', function () {
 	TvListing.render();
+	document.getElementById('date-picker').classList.remove('hidden');
 });
 
 Router.add('/search', function () {
 	SearchShows.render();
+	document.getElementById('date-picker').classList.add('hidden');
 });
 
